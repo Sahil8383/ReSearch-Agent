@@ -24,12 +24,40 @@ def main():
     agent = ReActAgent(model="claude-3-5-haiku-20241022", stream=stream_enabled)
     
     while True:
-        # Get user input
-        user_query = input("\n💬 Your Question: ").strip()
+        # Get user input (supports multi-line)
+        print("\n💬 Your Question (press Enter twice to finish, or type 'exit'/'quit' to end):")
+        lines = []
+        should_exit = False
         
-        if user_query.lower() in ['exit', 'quit', 'q']:
-            print("\n👋 Goodbye! Thanks for using the agent.\n")
+        while True:
+            try:
+                line = input()
+                if line.strip().lower() in ['exit', 'quit', 'q']:
+                    print("\n👋 Goodbye! Thanks for using the agent.\n")
+                    should_exit = True
+                    break
+                
+                if not line.strip():
+                    # Empty line - if we have content, this finishes input
+                    if lines:
+                        break
+                    # If no content yet, just continue
+                    continue
+                else:
+                    lines.append(line)
+            except EOFError:
+                # Handle Ctrl+D
+                if lines:
+                    break
+                else:
+                    print("\n👋 Goodbye! Thanks for using the agent.\n")
+                    should_exit = True
+                    break
+        
+        if should_exit:
             break
+        
+        user_query = "\n".join(lines).strip()
         
         if not user_query:
             print("⚠️  Please enter a valid question.")

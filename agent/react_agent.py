@@ -7,7 +7,7 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from agent.message import Message
-from agent.tools import WebSearchTool
+from agent.tools import WebSearchTool, CodeExecutionTool
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +23,7 @@ class ReActAgent:
         self.stream = stream
         self.messages: List[Message] = []
         self.web_search = WebSearchTool()
+        self.code_executor = CodeExecutionTool()
         
         # System prompt that defines the agent's behavior
         self.system_prompt = """You are a ReAct (Reasoning + Acting) agent that follows a strict step-by-step process.
@@ -40,11 +41,19 @@ You run in a loop:
 
 Available Actions:
 - web_search: <query> - Search the web for information
+- execute_code: <python code> - Execute Python code and get the output
 
 Format for Action:
 Thought: <your reasoning>
 Action: web_search: <your search query>
 PAUSE
+
+OR for code execution:
+Thought: <your reasoning>
+Action: execute_code: <python code>
+PAUSE
+
+Note: For execute_code, the code can be multi-line. Everything after "execute_code:" until "PAUSE" will be treated as Python code.
 
 Format for Final Answer (ONLY after receiving observations):
 Thought: <your reasoning based on observations>
@@ -137,9 +146,8 @@ Final Answer: [your answer based on the observations]
     def parse_action(self, text: str) -> Optional[tuple]:
         """Parse action from LLM response - only gets FIRST action"""
         # Look for Action: web_search: <query>
-        # Only match the FIRST action to enforce one-at-a-time behavior
-        action_pattern = r"Action:\s*web_search:\s*(.+?)(?:\n|PAUSE|$)"
-        match = re.search(action_pattern, text, re.IGNORECASE | re.DOTALL)
+        web_search_pattern = r"Action:\s*web_search:\s*(.+?)(?:\n|PAUSE|$)"
+        match = re.search(web_search_pattern, text, re.IGNORECASE | re.DOTALL)
         
         if match:
             query = match.group(1).strip()
@@ -147,12 +155,27 @@ Final Answer: [your answer based on the observations]
             query = query.split('\n')[0].split('PAUSE')[0].strip()
             return ("web_search", query)
         
+        # Look for Action: execute_code: <code>
+        # Code can be multi-line, so we capture everything until PAUSE or end
+        # The code can start on the same line or on a new line after "execute_code:"
+        code_pattern = r"Action:\s*execute_code:\s*(.*?)(?=\n\s*PAUSE\s*|PAUSE\s*$|$)"
+        match = re.search(code_pattern, text, re.IGNORECASE | re.DOTALL)
+        
+        if match:
+            code = match.group(1).strip()
+            # Remove any trailing PAUSE that might have been captured
+            if code.endswith('PAUSE'):
+                code = code[:-5].strip()
+            return ("execute_code", code)
+        
         return None
     
     def execute_action(self, action_type: str, action_input: str) -> str:
         """Execute the specified action"""
         if action_type == "web_search":
             return self.web_search.search(action_input)
+        elif action_type == "execute_code":
+            return self.code_executor.execute(action_input)
         else:
             return f"Unknown action type: {action_type}"
     
