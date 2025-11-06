@@ -96,17 +96,47 @@ Thought: I now have enough information from the observations
 Final Answer: [your answer based on the observations]
 """
     
-    def reset(self):
-        """Reset the agent's memory"""
+    def reset(self, clear_short_term_memory: bool = False):
+        """Reset the agent's memory
+        
+        Args:
+            clear_short_term_memory: If True, also clears the short-term memory (last 5 messages)
+        """
         self.messages = []
+        if clear_short_term_memory:
+            Message.clear_memory()
+    
+    def get_short_term_memory(self) -> List[Message]:
+        """Get the short-term memory (last 5 messages)"""
+        return Message.get_short_term_memory()
     
     def add_message(self, role: str, content: str):
         """Add a message to the conversation history"""
         self.messages.append(Message(role, content))
     
-    def get_messages_for_api(self) -> List[Dict[str, str]]:
-        """Convert messages to format required by Anthropic API"""
-        return [msg.to_dict() for msg in self.messages]
+    def get_messages_for_api(self, use_short_term_memory: bool = True) -> List[Dict[str, str]]:
+        """Convert messages to format required by Anthropic API
+        
+        Args:
+            use_short_term_memory: If True, includes the last 5 messages from short-term memory
+                                  as context before the current conversation messages
+        """
+        messages = []
+        
+        # Add short-term memory as context (if enabled)
+        if use_short_term_memory:
+            short_term_memory = Message.get_short_term_memory_dicts()
+            # Only include messages that are NOT already in current conversation
+            # This prevents duplicates if the same messages are in both
+            current_message_contents = {msg.content for msg in self.messages}
+            for mem_msg in short_term_memory:
+                if mem_msg["content"] not in current_message_contents:
+                    messages.append(mem_msg)
+        
+        # Add current conversation messages
+        messages.extend([msg.to_dict() for msg in self.messages])
+        
+        return messages
     
     def call_llm(self) -> str:
         """Call the LLM and get a response (streaming or non-streaming)"""
