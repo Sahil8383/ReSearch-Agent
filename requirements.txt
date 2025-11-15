@@ -1,4 +1,29 @@
-anthropic>=0.34.0
+# FastAPI & Web
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# Database
+sqlalchemy>=2.0.0
+asyncpg>=0.29.0  # For PostgreSQL
+greenlet>=3.0.0  # Required for SQLAlchemy async operations
+
+# Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Environment
 python-dotenv>=1.0.0
+
+# Original dependencies
+anthropic>=0.34.0
 tavily-python>=0.3.0
+
+# Optional but recommended
+python-jose>=3.3.0
+passlib>=1.7.4
+bcrypt>=4.1.0
+
+# Testing
+aiohttp>=3.9.0
 
