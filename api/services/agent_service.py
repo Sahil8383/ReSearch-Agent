@@ -101,11 +101,11 @@ class AgentService:
                 raise Exception(token.replace("__ERROR__:", ""))
             yield token
     
-    async def run_agent_streaming(self, query: str, session):
+    async def run_agent_streaming(self, query: str, session, max_iterations: int = 10):
         """Stream agent execution with real-time updates"""
         # Create a fresh agent instance for streaming
         streaming_agent = ReActAgentAPI(stream=False)
-        streaming_agent.max_iterations = 10
+        streaming_agent.max_iterations = max_iterations
         
         # Reset and add user query
         streaming_agent.reset()

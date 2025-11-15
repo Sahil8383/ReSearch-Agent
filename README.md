@@ -35,18 +35,21 @@ A powerful FastAPI-based ReAct (Reasoning + Acting) agent API that combines inte
 ### Setup
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repo-url>
 cd first-agent
 ```
 
 2. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 3. Set up environment variables:
-Create a `.env` file in the root directory:
+   Create a `.env` file in the root directory:
+
 ```env
 # Database
 DATABASE_URL=postgresql+asyncpg://username:password@localhost/dbname
@@ -64,11 +67,13 @@ AGENT_MAX_ITERATIONS=10
 ```
 
 4. Initialize the database:
+
 ```bash
 python init_db.py
 ```
 
 5. Run the API:
+
 ```bash
 python main.py
 # or
@@ -81,28 +86,31 @@ The API will be available at `http://localhost:8000` with interactive docs at `h
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://rbmbp33@localhost/first-agent` |
-| `API_HOST` | API host address | `0.0.0.0` |
-| `API_PORT` | API port | `8000` |
-| `CORS_ORIGINS` | Allowed CORS origins (JSON array) | `["http://localhost:3000"]` |
-| `ANTHROPIC_API_KEY` | Anthropic API key (required) | - |
-| `TAVILY_API_KEY` | Tavily API key (required) | - |
-| `AGENT_MODEL` | Claude model to use | `claude-3-5-haiku-20241022` |
-| `AGENT_MAX_ITERATIONS` | Maximum agent loop iterations | `10` |
+| Variable               | Description                       | Default                                              |
+| ---------------------- | --------------------------------- | ---------------------------------------------------- |
+| `DATABASE_URL`         | PostgreSQL connection string      | `postgresql+asyncpg://rbmbp33@localhost/first-agent` |
+| `API_HOST`             | API host address                  | `0.0.0.0`                                            |
+| `API_PORT`             | API port                          | `8000`                                               |
+| `CORS_ORIGINS`         | Allowed CORS origins (JSON array) | `["http://localhost:3000"]`                          |
+| `ANTHROPIC_API_KEY`    | Anthropic API key (required)      | -                                                    |
+| `TAVILY_API_KEY`       | Tavily API key (required)         | -                                                    |
+| `AGENT_MODEL`          | Claude model to use               | `claude-3-5-haiku-20241022`                          |
+| `AGENT_MAX_ITERATIONS` | Maximum agent loop iterations     | `10`                                                 |
 
 ## API Routes
 
 ### Base URL
+
 All API routes are prefixed with `/api` unless otherwise specified.
 
 ### Health Check
 
 #### `GET /api/health`
+
 Check API health status.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -115,14 +123,17 @@ Check API health status.
 ### Chat Endpoints
 
 #### `POST /api/chat`
+
 Send a query to the agent and get a response.
 
 **Headers:**
+
 ```
 Authorization: Bearer <user_id>
 ```
 
 **Request Body:**
+
 ```json
 {
   "query": "What is the latest news about AI?",
@@ -132,6 +143,7 @@ Authorization: Bearer <user_id>
 ```
 
 **Response:**
+
 ```json
 {
   "answer": "Based on my research...",
@@ -151,26 +163,40 @@ Authorization: Bearer <user_id>
 ```
 
 **Status Codes:**
+
 - `200`: Success
 - `401`: Unauthorized
 - `422`: Validation error
 - `500`: Internal server error
 
-#### `GET /api/chat/stream`
+#### `POST /api/chat/stream`
+
 Stream agent execution with real-time updates using Server-Sent Events (SSE).
 
 **Headers:**
+
 ```
 Authorization: Bearer <user_id>
 ```
 
-**Query Parameters:**
-- `query` (string, required): The question or task for the agent
+**Request Body:**
+
+```json
+{
+  "query": "What is the latest news about AI?",
+  "stream": true,
+  "max_iterations": 10
+}
+```
+
+**Query Parameters (optional):**
+
 - `session_id` (string, optional): Session ID to continue conversation
 
 **Response:** Server-Sent Events stream
 
 **Event Types:**
+
 - `start`: Agent started
 - `iteration_start`: New iteration began
 - `thinking`: Agent is thinking
@@ -187,6 +213,7 @@ Authorization: Bearer <user_id>
 - `end`: Stream completed
 
 **Example Event:**
+
 ```
 data: {"type":"start","message":"Starting agent...","query":"What is AI?"}
 
@@ -208,14 +235,17 @@ data: {"type":"end","iterations":2,"status":"completed","actions_count":1}
 ### Session Endpoints
 
 #### `POST /api/sessions`
+
 Create a new session.
 
 **Headers:**
+
 ```
 Authorization: Bearer <user_id>
 ```
 
 **Request Body:**
+
 ```json
 {
   "title": "AI Research Session"
@@ -223,6 +253,7 @@ Authorization: Bearer <user_id>
 ```
 
 **Response:**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -234,14 +265,17 @@ Authorization: Bearer <user_id>
 ```
 
 #### `GET /api/sessions/{session_id}`
+
 Get details of a specific session.
 
 **Headers:**
+
 ```
 Authorization: Bearer <user_id>
 ```
 
 **Response:**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -253,19 +287,23 @@ Authorization: Bearer <user_id>
 ```
 
 **Status Codes:**
+
 - `200`: Success
 - `401`: Unauthorized
 - `404`: Session not found
 
 #### `DELETE /api/sessions/{session_id}`
+
 Delete a session and all its conversations.
 
 **Headers:**
+
 ```
 Authorization: Bearer <user_id>
 ```
 
 **Status Codes:**
+
 - `204`: Success (no content)
 - `401`: Unauthorized
 - `404`: Session not found
@@ -275,6 +313,7 @@ Authorization: Bearer <user_id>
 ### Request Schemas
 
 #### `ChatRequest`
+
 ```typescript
 {
   query: string;           // 1-5000 characters
@@ -284,6 +323,7 @@ Authorization: Bearer <user_id>
 ```
 
 #### `CreateSessionRequest`
+
 ```typescript
 {
   title?: string;          // Optional session title
@@ -293,6 +333,7 @@ Authorization: Bearer <user_id>
 ### Response Schemas
 
 #### `ChatResponse`
+
 ```typescript
 {
   answer: string;
@@ -305,6 +346,7 @@ Authorization: Bearer <user_id>
 ```
 
 #### `ActionTaken`
+
 ```typescript
 {
   type: string;            // "web_search" | "execute_code" | etc.
@@ -315,6 +357,7 @@ Authorization: Bearer <user_id>
 ```
 
 #### `SessionResponse`
+
 ```typescript
 {
   id: string;              // UUID
@@ -326,21 +369,23 @@ Authorization: Bearer <user_id>
 ```
 
 #### `ErrorResponse`
+
 ```typescript
 {
-  error: string;           // Error type
-  message: string;         // Error message
+  error: string; // Error type
+  message: string; // Error message
   status_code: number;
-  timestamp: string;       // ISO 8601 datetime
+  timestamp: string; // ISO 8601 datetime
 }
 ```
 
 #### `HealthResponse`
+
 ```typescript
 {
-  status: string;          // "healthy"
-  timestamp: string;       // ISO 8601 datetime
-  database: string;        // "connected"
+  status: string; // "healthy"
+  timestamp: string; // ISO 8601 datetime
+  database: string; // "connected"
   version: string;
 }
 ```
@@ -352,6 +397,7 @@ The API uses a global error handling middleware that catches and formats all err
 ### Error Response Format
 
 All errors follow this structure:
+
 ```json
 {
   "error": "Error Type",
@@ -364,10 +410,12 @@ All errors follow this structure:
 ### Error Types
 
 1. **Validation Error (422)**
+
    - Triggered by: Invalid request body or parameters
    - Example: Missing required field, invalid data type
 
 2. **HTTP Error (4xx, 5xx)**
+
    - Triggered by: HTTPException in routes
    - Examples:
      - `401 Unauthorized`: Invalid or missing authentication
@@ -382,24 +430,24 @@ All errors follow this structure:
 
 ```typescript
 try {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
+  const response = await fetch("/api/chat", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userId}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userId}`,
     },
-    body: JSON.stringify({ query: 'Hello' })
+    body: JSON.stringify({ query: "Hello" }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    console.error('Error:', error.error, error.message);
+    console.error("Error:", error.error, error.message);
     // Handle error based on error.status_code
   }
 
   const data = await response.json();
 } catch (error) {
-  console.error('Network error:', error);
+  console.error("Network error:", error);
 }
 ```
 
@@ -409,13 +457,24 @@ The API supports Server-Sent Events (SSE) for real-time streaming of agent execu
 
 ### Streaming Endpoint
 
-**Endpoint:** `GET /api/chat/stream?query=<your_query>&session_id=<optional>`
+**Endpoint:** `POST /api/chat/stream?session_id=<optional>`
+
+**Request Body:**
+
+```json
+{
+  "query": "your query here",
+  "stream": true,
+  "max_iterations": 10
+}
+```
 
 **Content-Type:** `text/event-stream`
 
 ### Event Format
 
 Each event follows the SSE format:
+
 ```
 data: <JSON_STRING>
 
@@ -423,47 +482,55 @@ data: <JSON_STRING>
 
 ### Event Types
 
-| Event Type | Description | Payload |
-|------------|-------------|---------|
-| `start` | Agent execution started | `{type, message, query}` |
-| `iteration_start` | New iteration began | `{type, iteration, message}` |
-| `thinking` | Agent is thinking | `{type, message}` |
-| `thought_start` | Thought generation started | `{type, iteration}` |
-| `thought_token` | Token from thought (streaming) | `{type, token, iteration}` |
-| `thought_complete` | Thought completed | `{type, iteration}` |
-| `action` | Action detected | `{type, action_type, input, iteration}` |
-| `observation` | Action observation | `{type, action_type, observation, iteration}` |
-| `final_answer_start` | Final answer started | `{type}` |
-| `final_answer_token` | Token from final answer | `{type, token}` |
-| `final_answer_complete` | Final answer completed | `{type, answer, iterations, status}` |
-| `max_iterations` | Max iterations reached | `{type, message}` |
-| `error` | Error occurred | `{type, message}` |
-| `end` | Stream completed | `{type, iterations, status, actions_count}` |
+| Event Type              | Description                    | Payload                                       |
+| ----------------------- | ------------------------------ | --------------------------------------------- |
+| `start`                 | Agent execution started        | `{type, message, query}`                      |
+| `iteration_start`       | New iteration began            | `{type, iteration, message}`                  |
+| `thinking`              | Agent is thinking              | `{type, message}`                             |
+| `thought_start`         | Thought generation started     | `{type, iteration}`                           |
+| `thought_token`         | Token from thought (streaming) | `{type, token, iteration}`                    |
+| `thought_complete`      | Thought completed              | `{type, iteration}`                           |
+| `action`                | Action detected                | `{type, action_type, input, iteration}`       |
+| `observation`           | Action observation             | `{type, action_type, observation, iteration}` |
+| `final_answer_start`    | Final answer started           | `{type}`                                      |
+| `final_answer_token`    | Token from final answer        | `{type, token}`                               |
+| `final_answer_complete` | Final answer completed         | `{type, answer, iterations, status}`          |
+| `max_iterations`        | Max iterations reached         | `{type, message}`                             |
+| `error`                 | Error occurred                 | `{type, message}`                             |
+| `end`                   | Stream completed               | `{type, iterations, status, actions_count}`   |
 
 ### Next.js Streaming Example
 
 ```typescript
 // app/api/chat/stream/route.ts (Next.js API route)
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('query');
-  const sessionId = searchParams.get('session_id');
-  const userId = request.headers.get('authorization')?.replace('Bearer ', '');
+export async function POST(request: Request) {
+  const body = await request.json();
+  const { query, max_iterations, session_id } = body;
+  const userId = request.headers.get("authorization")?.replace("Bearer ", "");
 
-  const apiUrl = `http://localhost:8000/api/chat/stream?query=${encodeURIComponent(query)}${sessionId ? `&session_id=${sessionId}` : ''}`;
-  
+  const apiUrl = `http://localhost:8000/api/chat/stream${
+    session_id ? `?session_id=${session_id}` : ""
+  }`;
+
   const response = await fetch(apiUrl, {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${userId}`
-    }
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userId}`,
+    },
+    body: JSON.stringify({
+      query,
+      stream: true,
+      max_iterations: max_iterations || 10,
+    }),
   });
 
   return new Response(response.body, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    }
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
   });
 }
 ```
@@ -472,72 +539,94 @@ export async function GET(request: Request) {
 // Client-side component
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function ChatStream() {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Array<{type: string, content: string}>>([]);
   const [isStreaming, setIsStreaming] = useState(false);
 
   const handleStream = async (query: string) => {
     setIsStreaming(true);
     setMessages([]);
 
-    const eventSource = new EventSource(
-      `/api/chat/stream?query=${encodeURIComponent(query)}`
-    );
+    const response = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userId}` // Get from auth context
+      },
+      body: JSON.stringify({
+        query,
+        stream: true,
+        max_iterations: 10
+      })
+    });
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      switch (data.type) {
-        case 'thought_token':
-        case 'final_answer_token':
-          setMessages(prev => {
-            const last = prev[prev.length - 1];
-            if (last?.type === data.type) {
-              return [...prev.slice(0, -1), { ...last, content: last.content + data.token }];
-            }
-            return [...prev, { type: data.type, content: data.token }];
-          });
-          break;
-        
-        case 'action':
-          setMessages(prev => [...prev, { 
-            type: 'action', 
-            content: `Action: ${data.action_type} - ${data.input}` 
-          }]);
-          break;
-        
-        case 'observation':
-          setMessages(prev => [...prev, { 
-            type: 'observation', 
-            content: `Observation: ${data.observation}` 
-          }]);
-          break;
-        
-        case 'end':
-          eventSource.close();
-          setIsStreaming(false);
-          break;
-        
-        case 'error':
-          console.error('Stream error:', data.message);
-          eventSource.close();
-          setIsStreaming(false);
-          break;
+    if (!response.body) return;
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+
+          switch (data.type) {
+            case 'thought_token':
+            case 'final_answer_token':
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.type === data.type) {
+                  return [...prev.slice(0, -1), { ...last, content: last.content + data.token }];
+                }
+                return [...prev, { type: data.type, content: data.token }];
+              });
+              break;
+
+            case 'action':
+              setMessages(prev => [...prev, {
+                type: 'action',
+                content: `Action: ${data.action_type} - ${data.input}`
+              }]);
+              break;
+
+            case 'observation':
+              setMessages(prev => [...prev, {
+                type: 'observation',
+                content: `Observation: ${data.observation}`
+              }]);
+              break;
+
+            case 'end':
+              setIsStreaming(false);
+              break;
+
+            case 'error':
+              console.error('Stream error:', data.message);
+              setIsStreaming(false);
+              break;
+          }
+        }
       }
-    };
-
-    eventSource.onerror = () => {
-      eventSource.close();
+    } catch (error) {
+      console.error('Stream error:', error);
       setIsStreaming(false);
-    };
+    }
   };
 
   return (
     <div>
-      <button onClick={() => handleStream('What is AI?')}>
-        Start Stream
+      <button onClick={() => handleStream('What is AI?')} disabled={isStreaming}>
+        {isStreaming ? 'Streaming...' : 'Start Stream'}
       </button>
       <div>
         {messages.map((msg, i) => (
@@ -554,12 +643,14 @@ export default function ChatStream() {
 ### Setup
 
 1. Create a Next.js app:
+
 ```bash
 npx create-next-app@latest agent-frontend
 cd agent-frontend
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -569,7 +660,7 @@ npm install
 Create `lib/api.ts`:
 
 ```typescript
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface ChatRequest {
   query: string;
@@ -603,21 +694,21 @@ export interface SessionResponse {
 class ApiClient {
   private getHeaders(userId: string) {
     return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userId}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userId}`,
     };
   }
 
   async chat(request: ChatRequest, userId: string): Promise<ChatResponse> {
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
-      method: 'POST',
+      method: "POST",
       headers: this.getHeaders(userId),
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Chat request failed');
+      throw new Error(error.message || "Chat request failed");
     }
 
     return response.json();
@@ -625,27 +716,30 @@ class ApiClient {
 
   async createSession(title: string, userId: string): Promise<SessionResponse> {
     const response = await fetch(`${API_BASE_URL}/api/sessions`, {
-      method: 'POST',
+      method: "POST",
       headers: this.getHeaders(userId),
-      body: JSON.stringify({ title })
+      body: JSON.stringify({ title }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to create session');
+      throw new Error(error.message || "Failed to create session");
     }
 
     return response.json();
   }
 
-  async getSession(sessionId: string, userId: string): Promise<SessionResponse> {
+  async getSession(
+    sessionId: string,
+    userId: string
+  ): Promise<SessionResponse> {
     const response = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`, {
-      headers: this.getHeaders(userId)
+      headers: this.getHeaders(userId),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to get session');
+      throw new Error(error.message || "Failed to get session");
     }
 
     return response.json();
@@ -653,20 +747,36 @@ class ApiClient {
 
   async deleteSession(sessionId: string, userId: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(userId)
+      method: "DELETE",
+      headers: this.getHeaders(userId),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to delete session');
+      throw new Error(error.message || "Failed to delete session");
     }
   }
 
-  createStreamUrl(query: string, sessionId?: string): string {
-    const params = new URLSearchParams({ query });
-    if (sessionId) params.append('session_id', sessionId);
-    return `${API_BASE_URL}/api/chat/stream?${params.toString()}`;
+  async streamChat(
+    request: ChatRequest,
+    userId: string,
+    sessionId?: string
+  ): Promise<Response> {
+    const url = `${API_BASE_URL}/api/chat/stream${
+      sessionId ? `?session_id=${sessionId}` : ""
+    }`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: this.getHeaders(userId),
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Stream request failed");
+    }
+
+    return response;
   }
 }
 
@@ -678,17 +788,17 @@ export const apiClient = new ApiClient();
 Create `components/Chat.tsx`:
 
 ```typescript
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { apiClient, ChatResponse } from '@/lib/api';
+import { useState } from "react";
+import { apiClient, ChatResponse } from "@/lib/api";
 
 export default function Chat() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [response, setResponse] = useState<ChatResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const userId = 'your-user-id'; // Get from auth context
+  const userId = "your-user-id"; // Get from auth context
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -702,7 +812,7 @@ export default function Chat() {
       );
       setResponse(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -719,7 +829,7 @@ export default function Chat() {
           disabled={loading}
         />
         <button type="submit" disabled={loading}>
-          {loading ? 'Sending...' : 'Send'}
+          {loading ? "Sending..." : "Send"}
         </button>
       </form>
 
@@ -755,6 +865,7 @@ export default function Chat() {
 ### Environment Variables
 
 Create `.env.local`:
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
@@ -762,6 +873,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ## Database Models
 
 ### User
+
 - `id` (UUID): Primary key
 - `email` (String): Unique email address
 - `username` (String): Unique username
@@ -771,6 +883,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - `is_active` (Boolean): Active status
 
 ### Session
+
 - `id` (UUID): Primary key
 - `user_id` (UUID): Foreign key to User
 - `title` (String, nullable): Session title
@@ -781,6 +894,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - `metadata_info` (JSON): Custom metadata
 
 ### Conversation
+
 - `id` (UUID): Primary key
 - `session_id` (UUID): Foreign key to Session
 - `query` (Text): User query
@@ -795,6 +909,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - `execution_time_ms` (Integer, nullable): Execution time in milliseconds
 
 ### AgentLog
+
 - `id` (UUID): Primary key
 - `session_id` (UUID, nullable): Foreign key to Session
 - `log_level` (String): "DEBUG" | "INFO" | "WARNING" | "ERROR"

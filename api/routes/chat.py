@@ -85,9 +85,9 @@ async def chat(
         )
 
 
-@router.get("/stream", response_class=StreamingResponse)
+@router.post("/stream", response_class=StreamingResponse)
 async def chat_stream(
-    query: str,
+    request: ChatRequest,
     session_id: str = None,
     db: AsyncSession = Depends(get_session),
     current_user = Depends(require_user)
@@ -95,6 +95,9 @@ async def chat_stream(
     """
     Streaming endpoint using Server-Sent Events (SSE).
     Sends agent thoughts and actions in real-time.
+    
+    - **query**: The question or task for the agent
+    - **max_iterations**: Maximum iterations for the agent loop
     """
     async def event_generator():
         try:
@@ -104,8 +107,9 @@ async def chat_stream(
             agent_service = AgentService()
             
             async for event in agent_service.run_agent_streaming(
-                query=query,
-                session=db_session
+                query=request.query,
+                session=db_session,
+                max_iterations=request.max_iterations
             ):
                 yield f"data: {event}\n\n"
                 
