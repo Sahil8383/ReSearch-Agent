@@ -11,13 +11,15 @@ class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=5000)
     stream: bool = False
     max_iterations: Optional[int] = 10
+    session_id: Optional[UUID] = Field(None, description="Session ID to attach conversation to. If not provided, a new session will be created.")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "query": "What is the latest news about AI?",
                 "stream": False,
-                "max_iterations": 10
+                "max_iterations": 10,
+                "session_id": None
             }
         }
 
@@ -43,6 +45,7 @@ class ActionTaken(BaseModel):
 
 class ConversationResponse(BaseModel):
     id: UUID
+    session_id: UUID = Field(..., description="Session ID this conversation belongs to")
     query: str
     response: Optional[str] = None
     iterations: int
@@ -72,6 +75,8 @@ class ChatResponse(BaseModel):
     status: str
     actions_taken: List[ActionTaken]
     execution_time_ms: int
+    session_id: UUID = Field(..., description="Session ID this conversation belongs to")
+    conversation_id: Optional[UUID] = Field(None, description="ID of the created conversation")
     message: Optional[str] = "Success"
 
 

@@ -7,7 +7,7 @@ import logging
 
 from .config import settings
 from .database import init_db, close_db
-from .routes import chat, sessions, health
+from .routes import chat, sessions, conversations, health
 from .middleware.error_handler import error_handler_middleware
 
 # Configure logging
@@ -50,6 +50,7 @@ app.middleware("http")(error_handler_middleware)
 app.include_router(health.router)
 app.include_router(chat.router)
 app.include_router(sessions.router)
+app.include_router(conversations.router)
 
 # Root endpoint
 @app.get("/")
