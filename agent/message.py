@@ -49,4 +49,25 @@ class Message:
         # Trim memory if new size is smaller
         if len(cls._short_term_memory) > size:
             cls._short_term_memory = cls._short_term_memory[-size:]
+    
+    @classmethod
+    def load_from_db(cls, db_memory: list):
+        """Load short-term memory from database format (list of dicts)"""
+        cls._short_term_memory = []
+        if db_memory:
+            for msg_dict in db_memory:
+                if isinstance(msg_dict, dict) and "role" in msg_dict and "content" in msg_dict:
+                    # Create message without triggering _add_to_memory
+                    msg = Message.__new__(Message)
+                    msg.role = msg_dict["role"]
+                    msg.content = msg_dict["content"]
+                    cls._short_term_memory.append(msg)
+        # Trim to memory size
+        if len(cls._short_term_memory) > cls._memory_size:
+            cls._short_term_memory = cls._short_term_memory[-cls._memory_size:]
+    
+    @classmethod
+    def save_to_db(cls) -> list:
+        """Save short-term memory to database format (list of dicts)"""
+        return [msg.to_dict() for msg in cls._short_term_memory]
 

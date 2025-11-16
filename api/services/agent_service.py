@@ -2,6 +2,7 @@
 
 from ..agent_wrapper import ReActAgentAPI
 from ..schemas import ActionTaken
+from agent.message import Message
 import asyncio
 import time
 import json
@@ -14,6 +15,10 @@ class AgentService:
     
     async def run_agent(self, query: str, session, max_iterations: int, db):
         """Run agent and return structured result"""
+        # Load short-term memory from database session
+        if session and session.short_term_memory and isinstance(session.short_term_memory, list):
+            Message.load_from_db(session.short_term_memory)
+        
         # Set max_iterations if provided
         if max_iterations:
             self.agent.max_iterations = max_iterations
@@ -26,6 +31,11 @@ class AgentService:
                 None,
                 lambda: self.agent.run(query)
             )
+            
+            # Save short-term memory back to database session
+            if session:
+                session.short_term_memory = Message.save_to_db()
+                await db.commit()
             
             # Format actions for response
             actions_taken = [
@@ -45,6 +55,13 @@ class AgentService:
                 "actions_taken": actions_taken
             }
         except Exception as e:
+            # Still try to save memory even on error
+            if session:
+                try:
+                    session.short_term_memory = Message.save_to_db()
+                    await db.commit()
+                except:
+                    pass
             return {
                 "answer": None,
                 "iterations": 0,
@@ -101,8 +118,12 @@ class AgentService:
                 raise Exception(token.replace("__ERROR__:", ""))
             yield token
     
-    async def run_agent_streaming(self, query: str, session, max_iterations: int = 10):
+    async def run_agent_streaming(self, query: str, session, max_iterations: int = 10, db=None):
         """Stream agent execution with real-time updates"""
+        # Load short-term memory from database session
+        if session and session.short_term_memory and isinstance(session.short_term_memory, list):
+            Message.load_from_db(session.short_term_memory)
+        
         # Create a fresh agent instance for streaming
         streaming_agent = ReActAgentAPI(stream=False)
         streaming_agent.max_iterations = max_iterations
@@ -258,6 +279,15 @@ class AgentService:
                     "type": "error",
                     "message": f"Error generating final answer: {str(e)}"
                 })
+        
+        # Save short-term memory back to database session
+        if session and db:
+            try:
+                session.short_term_memory = Message.save_to_db()
+                await db.commit()
+            except Exception as e:
+                # Log error but don't fail the stream
+                pass
         
         # End event - don't include full answer since it was already sent in final_answer_complete
         yield json.dumps({

@@ -128,7 +128,8 @@ async def chat_stream(
             async for event in agent_service.run_agent_streaming(
                 query=request.query,
                 session=db_session,
-                max_iterations=request.max_iterations
+                max_iterations=request.max_iterations,
+                db=db
             ):
                 # Yield the event to the client
                 yield f"data: {event}\n\n"

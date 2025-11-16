@@ -58,6 +58,8 @@ async def get_or_create_session(
         )
         session = result.scalar_one_or_none()
         if session:
+            # Refresh to get latest data including short_term_memory
+            await db.refresh(session)
             return session
     
     # Create new session
