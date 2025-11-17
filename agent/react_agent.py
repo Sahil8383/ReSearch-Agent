@@ -29,7 +29,7 @@ class ReActAgent:
         self.system_prompt = """You are a ReAct (Reasoning + Acting) agent that follows a strict step-by-step process.
 
 CRITICAL: You can ONLY output ONE of the following in each response:
-- Thought + Action (then PAUSE)
+- Thought + Action
 - OR Final Answer (only after receiving observations)
 
 You run in a loop:
@@ -46,14 +46,12 @@ Available Actions:
 Format for Action:
 Thought: <your reasoning>
 Action: web_search: <your search query>
-PAUSE
 
 OR for code execution:
 Thought: <your reasoning>
 Action: execute_code: <python code>
-PAUSE
 
-Note: For execute_code, the code can be multi-line. Everything after "execute_code:" until "PAUSE" will be treated as Python code.
+Note: For execute_code, the code can be multi-line. Everything after "execute_code:" will be treated as Python code.
 
 Format for Final Answer (ONLY after receiving observations):
 Thought: <your reasoning based on observations>
@@ -63,31 +61,27 @@ ABSOLUTE RULES - DO NOT VIOLATE:
 1. ONE action per response - NEVER multiple actions
 2. NEVER include Final Answer in the same response as an Action
 3. NEVER generate your own Observation - wait for the tool
-4. After PAUSE, you will receive an Observation - then you can think again
+4. After taking an action, you will receive an Observation - then you can think again
 5. Only provide Final Answer after you have received and reviewed actual Observations
-6. Stop immediately after Action + PAUSE - do not continue planning
+6. Stop immediately after Action - do not continue planning
 
 BAD EXAMPLE (DO NOT DO THIS):
 Thought: I need to search
 Action: web_search: query1
-PAUSE
 Thought: I also need to search
 Action: web_search: query2
-PAUSE
 Final Answer: answer
 
 GOOD EXAMPLE:
 Response 1:
 Thought: I need to search for information about X
 Action: web_search: information about X
-PAUSE
 
 [After receiving Observation]
 
 Response 2:
 Thought: Based on the observation, I need more specific info about Y
 Action: web_search: specific info about Y
-PAUSE
 
 [After receiving Observation]
 
@@ -176,26 +170,23 @@ Final Answer: [your answer based on the observations]
     def parse_action(self, text: str) -> Optional[tuple]:
         """Parse action from LLM response - only gets FIRST action"""
         # Look for Action: web_search: <query>
-        web_search_pattern = r"Action:\s*web_search:\s*(.+?)(?:\n|PAUSE|$)"
+        web_search_pattern = r"Action:\s*web_search:\s*(.+?)(?:\n|$)"
         match = re.search(web_search_pattern, text, re.IGNORECASE | re.DOTALL)
         
         if match:
             query = match.group(1).strip()
             # Clean up query - remove any trailing thoughts or actions
-            query = query.split('\n')[0].split('PAUSE')[0].strip()
+            query = query.split('\n')[0].strip()
             return ("web_search", query)
         
         # Look for Action: execute_code: <code>
-        # Code can be multi-line, so we capture everything until PAUSE or end
+        # Code can be multi-line, so we capture everything until end or next Thought/Final Answer
         # The code can start on the same line or on a new line after "execute_code:"
-        code_pattern = r"Action:\s*execute_code:\s*(.*?)(?=\n\s*PAUSE\s*|PAUSE\s*$|$)"
+        code_pattern = r"Action:\s*execute_code:\s*(.*?)(?=\n\s*(?:Thought|Final Answer):|$)"
         match = re.search(code_pattern, text, re.IGNORECASE | re.DOTALL)
         
         if match:
             code = match.group(1).strip()
-            # Remove any trailing PAUSE that might have been captured
-            if code.endswith('PAUSE'):
-                code = code[:-5].strip()
             return ("execute_code", code)
         
         return None
@@ -292,9 +283,8 @@ Final Answer: [your answer based on the observations]
                 return final_answer
             
             # No action found and no final answer - might be stuck
-            if "PAUSE" not in response:
-                print("\n⚠️  No action found and no PAUSE detected. Prompting agent to continue...")
-                self.add_message("user", "Please continue with a Thought and Action, or provide a Final Answer.")
+            print("\n⚠️  No action found and no final answer detected. Prompting agent to continue...")
+            self.add_message("user", "Please continue with a Thought and Action, or provide a Final Answer.")
         
         # Max iterations reached
         print("\n⚠️  Maximum iterations reached. Generating final answer...")
